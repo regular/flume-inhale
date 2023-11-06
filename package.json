@@ -1,0 +1,26 @@
+{
+  "name": "flume-inhale",
+  "version": "1.0.0",
+  "description": "Replicate arbitrary data source into a flumedb",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Jan Bölsche <jan@lagomorph.de> (http://regular.codes/)",
+  "license": "ISC",
+  "dependencies": {
+    "flumedb": "^2.1.8",
+    "flumelog-offset": "^3.4.4",
+    "flumeview-reduce": "^1.4.0",
+    "luxon": "^3.2.1",
+    "pull-buffer-until": "^2.1.0",
+    "pull-defer": "^0.2.3",
+    "pull-looper": "^1.0.0",
+    "pull-stream": "^3.7.0"
+  },
+  "devDependencies": {
+    "flumelog-array": "^1.2.0",
+    "tape": "^5.6.3"
+  }
+}
