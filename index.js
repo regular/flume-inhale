@@ -77,7 +77,7 @@ module.exports = function(conf, db, stream, cb) {
     }   
 
     pull(
-      stream(dt_start, dt_end),
+      stream(dt_start, dt_end, continuation),
       pullLooper,
       bufferUntil( buff=>{
         return buff[buff.length-1].type == '__since'
