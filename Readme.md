@@ -19,7 +19,7 @@ Where db is a flumedb instance, stream is a function that returns a pull-stream 
 }
 ```
 
-`minAge` specifies how long the data needs to be present i the source before being requested by flume0inhale. Sometimes sources will mutate entries for a while before they enter an immutable state, that's what minAge is for. (think of it as a safety margin, time-wise)
+`minAge` specifies how long the data needs to be present in the source before being requested by flume-inhale. Sometimes sources will mutate entries for a while before they enter an immutable state, that's what minAge is for. (think of it as a safety margin, time-wise)
 
 (see luxon for the time formats)
 
@@ -29,7 +29,7 @@ The user-provided stream function's signature is:
 stream(dt_start, dt_end)
 ```
 
-The arguments define a time span for the data to be returned (data sources must have monotonic timestamps!). `dt_start` and `dt_end` are instances of lucon DateTime objects. The stream must return data **before** dt_end, dt_end is exclusice! (dt_start <= data.timestamp < dt_end.
+The arguments define a time span for the data to be returned (data sources must have monotonic timestamps!). `dt_start` and `dt_end` are instances of luxon DateTime objects. The stream must return data **before** dt_end, dt_end is exclusice! (dt_start <= data.timestamp < dt_end.
 
 The last object in the pull-stream returned by stream() must be:
 

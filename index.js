@@ -24,6 +24,8 @@ const defaults = {
 
 module.exports = function(conf, db, stream, cb) {
   conf = Object.assign({}, defaults, conf)
+  const debug = require('debug')(conf.debug_id || 'flume-inhale')
+  const now = conf.now || DateTime.now
   //if (conf.data_dir) return cb(new Error('Need data_dir'))
 
   db.use('continuation', Reduce(2, {
@@ -40,9 +42,9 @@ module.exports = function(conf, db, stream, cb) {
       return cb(err)
     }
     if (continuation.timestamp) {
-      console.error('continuation timestamp is', formatTimestamp(continuation.timestamp))
+      debug('continuation timestamp is', formatTimestamp(continuation.timestamp))
     } else {
-      console.error('Starting from scratch')
+      debug('Starting from scratch')
     }
     conf.continuation = continuation
     
@@ -65,18 +67,34 @@ module.exports = function(conf, db, stream, cb) {
   })
 
   function update(db, conf, cb) {
-    let continuation = conf.continuation
+    let {continuation} = conf
 
-    const dt_max = DateTime.now().setZone(conf.tz).minus(conf.minage)
-    const dt_start = conf.continuation.timestamp ?
+    // timestamps of items requested must be greater or equal request_from
+    debug('conf.continuation.timestamp: %d (%s)', continuation.timestamp, formatTimestamp(continuation.timestamp))
+    const dt_request_from = conf.continuation.timestamp ?
       DateTime.fromSeconds(conf.continuation.timestamp / 1000).setZone(conf.tz) :    
-      DateTime.fromISO(conf.startday).setZone(conf.tz).startOf('day')
+      DateTime.fromISO(conf.startday, {zone: conf.tz}).startOf('day')
+    debug('dt_request_from=%s', dt_request_from.toISO())
 
-    const dt_end = DateTime.min(dt_max, dt_start.plus(conf.maxSpanPerReq))
+    // the highest timestamp we might request without vialating minimum age requirement
+    // if minage is zero, we can safely request items up to the current time
+    const dt_max_safe = now().setZone(conf.tz).minus(conf.minage)
+    debug('minage %O limits us to before %s', conf.minage, dt_max_safe.toISO())
+    
+    const dt_max_span_request_end = dt_request_from.plus(conf.maxSpanPerReq)
+    debug('maxSpanPerReq %O limits us to before %s', conf.maxSpanPerReq, dt_max_span_request_end.toISO())
+  
+    // timestamps of items requested must be lesser than request_to
+    const dt_request_to = DateTime.min(dt_max_safe, dt_max_span_request_end)
+    debug('dt_request_to=%s', dt_request_to.toISO())
 
-    const wait = dt_start.plus(conf.minSpanPerReq).toSeconds() - dt_end.toSeconds()
+    const dt_min_span_request_end = dt_request_from.plus(conf.minSpanPerReq)
+    debug('minSpanPerReq %O limits us to before %s', conf.minSpanPerReq, dt_min_span_request_end.toISO())
+
+    const wait = dt_min_span_request_end.toSeconds() - dt_request_to.toSeconds()
     if (wait>0) {
-      console.error(`Will continue ${DateTime.now().plus({seconds: wait}).toRelative()}`)
+      debug('we need to wait %d seconds in order to make the smallest allowed request of %O', wait, conf.minSpanPerReq)
+      console.error(`Will continue ${now().plus({seconds: wait}).toRelative()}`)
       setTimeout( ()=>{
         cb(null, continuation)
       }, wait * 1000)
@@ -84,7 +102,7 @@ module.exports = function(conf, db, stream, cb) {
     }   
 
     pull(
-      stream(dt_start, dt_end, continuation),
+      stream(dt_request_from, dt_request_to, continuation),
       pullLooper,
       bufferUntil( buff=>{
         return buff[buff.length-1].type == '__since'
@@ -95,14 +113,14 @@ module.exports = function(conf, db, stream, cb) {
           if (err) return cb(err)
           db.continuation.get((err, value) => {
             if (err) return cb(err)
-            console.error(formatTimestamp(value.timestamp), items.length, 'items')
+            debug('written %d records, new continuation timepstamp: %s', items.length, formatTimestamp(value.timestamp))
             continuation = value
             cb(null, seq)
           })
         })
       }),
       pull.onEnd(err=>{
-        cb(err, continuation)
+        cb(err, err ? undefined : continuation)
       })
     )
   }

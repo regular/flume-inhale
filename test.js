@@ -21,12 +21,17 @@ test('update', t=>{
     offsetCodec: offsetCodecs[48]
   }))
 
+  function now() {
+    return DateTime.fromISO('2014-06-07T09:00:00', {zone: 'Europe/Berlin'})
+  }
+
   const conf = {
+    now,
     update_interval: {seconds: 2},
-    startday: DateTime.now().toISODate(),
+    startday: now().toISODate(),
     minage: {seconds: 10},
     maxSpanPerReq: {months: 1},
-    minSpanPerReq: {days: 1},
+    minSpanPerReq: {minutes: 1},
   }
 
   update(conf, db, stream, err=>{
@@ -35,9 +40,9 @@ test('update', t=>{
   })
 
   function stream(start, end) {
-    console.log(start.toISODate(), end.toISODate())
+    t.equal(start.toISO(), '2014-06-07T00:00:00.000+02:00')
+    t.equal(end.toISO(), '2014-06-07T08:59:50.000+02:00')
     return pull.error(new Error('end'))
-    t.end()
   }
 
 })
