@@ -1,5 +1,8 @@
 {
-  "name": "flume-inhale",
+  "name": "@regular/flume-inhale",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "3.0.0",
   "description": "Replicate arbitrary data source into a flumedb",
   "main": "index.js",
