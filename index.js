@@ -41,7 +41,7 @@ module.exports = function(conf, db, stream, cb) {
       console.error('Unable to read continuation value:', err.message)
       return cb(err)
     }
-    if (continuation.timestamp) {
+    if (continuation && continuation.timestamp) {
       debug('continuation timestamp is', formatTimestamp(continuation.timestamp))
     } else {
       debug('Starting from scratch')
@@ -68,11 +68,12 @@ module.exports = function(conf, db, stream, cb) {
 
   function update(db, conf, cb) {
     let {continuation} = conf
+    continuation = continuation || {}
 
     // timestamps of items requested must be greater or equal request_from
     debug('conf.continuation.timestamp: %d (%s)', continuation.timestamp, formatTimestamp(continuation.timestamp))
-    const dt_request_from = conf.continuation.timestamp ?
-      DateTime.fromSeconds(conf.continuation.timestamp / 1000).setZone(conf.tz) :    
+    const dt_request_from = continuation.timestamp ?
+      DateTime.fromSeconds(continuation.timestamp / 1000).setZone(conf.tz) :    
       DateTime.fromISO(conf.startday, {zone: conf.tz}).startOf('day')
     debug('dt_request_from=%s', dt_request_from.toISO())
 
