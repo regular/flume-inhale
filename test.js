@@ -32,6 +32,7 @@ test('update', t=>{
     minage: {seconds: 10},
     maxSpanPerReq: {months: 1},
     minSpanPerReq: {minutes: 1},
+    retry: false
   }
 
   update(conf, db, stream, err=>{

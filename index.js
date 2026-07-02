@@ -19,7 +19,9 @@ const defaults = {
   minage: {days: 1},
   maxSpanPerReq: {months: 1},
   minSpanPerReq: {days: 1},
-  tz: 'Europe/Berlin'
+  tz: 'Europe/Berlin',
+  retry: true,
+  retryDelay: 1000 * 60 * 10 // 10 minutes
 }
 
 module.exports = function(conf, db, stream, cb) {
@@ -54,7 +56,11 @@ module.exports = function(conf, db, stream, cb) {
         if (err) {
           console.error('-- STREAM ABORT')
           console.error(inspect(err, {depth: 6, colors: true}))
-          return cb(err)
+          if (conf.retry) {
+            return setTimeout(periodic, conf.retryDelay)
+          } else {
+            return cb(err)
+          }
         } else {
           //console.error('flumedb is in sync with upstream source.')
         }
